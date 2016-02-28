@@ -114,13 +114,115 @@ angular.module('starter.controllers', [])
     ionicMaterialInk.displayEffect();
 })
 
-.controller('ProfileCtrl', function($scope, $stateParams, $timeout, ionicMaterialMotion, ionicMaterialInk) {
+.controller('ProfileCtrl', function($scope, $stateParams, $timeout, $interval, ionicMaterialMotion, ionicMaterialInk, Meta) {
     // Set Header
     $scope.$parent.showHeader();
     $scope.$parent.clearFabs();
     $scope.isExpanded = false;
     $scope.$parent.setExpanded(false);
     $scope.$parent.setHeaderFab(false);
+    $scope.checkMeta = checkMeta;
+
+    checkMeta();
+
+    // check for meta
+    function checkMeta() {
+        Meta.getMeta().then(function(data) {
+            return $scope.meta = data.icestats.source[0].title;
+        });
+    }
+
+    // check for meta every 15 seconds
+    $interval(function() {
+        $scope.checkMeta();
+    }, 30000);
+
+    // if meta has changed
+    $scope.$watch('meta', function(value) {
+        if ($scope.meta)
+        console.log(value);
+    });
+
+
+
+    var context	= new AudioContext(),
+        audio,
+        source,
+        lineOut,
+        analyser
+        ;
+
+	audio = document.querySelector('audio');
+    source = context.createMediaElementSource(audio);
+
+    // Create lineOut
+    lineOut	= new WebAudiox.LineOut(context);
+    lineOut.volume	= 1;
+
+
+    analyser	= context.createAnalyser();
+    analyser.connect(lineOut.destination);
+    lineOut.destination	= analyser;
+
+    source.connect(lineOut.destination);
+
+    // create and add the canvas
+    var canvas	= document.createElement('canvas');
+    canvas.width	= window.innerWidth;
+    canvas.height	= window.innerHeight;
+    var ctx		= canvas.getContext("2d");
+    document.body.appendChild(canvas)
+
+    // create the object
+    var analyser2Volume	= new WebAudiox.Analyser2Volume(analyser);
+
+    // loop and update
+    requestAnimationFrame(function update() {
+        requestAnimationFrame(update);
+
+        // clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        // get volume
+		var volume	= analyser2Volume.rawValue();
+        //var volume = WebAudiox.Analyser2Volume.compute(analyser);
+        if (volume > 0 && volume < 0.0006) {
+            console.log('volume low catch');
+            $scope.checkMeta();
+        }
+
+
+        // up to you to find the colors you like
+        ctx.fillStyle	= "rgb("+Math.floor(1.3*volume*256)+", 0, 0);";
+        // draw a circle
+        var radius	= 1+volume * 400
+        ctx.beginPath()
+        ctx.arc(canvas.width/2, canvas.height/2, radius, 0, Math.PI*2, true);
+        ctx.closePath()
+        ctx.fill()
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Set Motion
     $timeout(function() {
